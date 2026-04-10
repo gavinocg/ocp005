@@ -71,6 +71,22 @@
         <div id="loadingMessage" class="alert alert-info text-center mb-0" style="display: none;">
             <i class="bi bi-arrow-repeat animate-spin"></i> Consultando Oracle...
         </div>
+        
+        <!-- Overlay de carga para guardar -->
+        <div id="saveOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+            <div class="text-center bg-white p-4 rounded shadow-lg" style="min-width: 280px;">
+                <div id="saveSpinner" class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div id="saveMessage" class="fw-bold text-primary">Guardando... por favor espere</div>
+                <div id="saveSuccess" class="fw-bold text-success" style="display: none;">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div id="saveError" class="fw-bold text-danger" style="display: none;">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -167,6 +183,8 @@
             return;
         }
 
+        document.getElementById('saveOverlay').style.display = 'flex';
+
         fetch('{{ route("consultar.guardar") }}', {
             method: 'POST',
             headers: {
@@ -177,15 +195,25 @@
         })
         .then(response => response.json())
         .then(data => {
+            document.getElementById('saveSpinner').style.display = 'none';
+            document.getElementById('saveMessage').style.display = 'none';
+            
             if (data.success) {
-                alert(data.message);
-                window.location.href = '{{ route("cobros.index") }}';
+                document.getElementById('saveSuccess').textContent = data.count + ' registros guardados correctamente';
+                document.getElementById('saveSuccess').style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = '{{ route("cobros.index") }}';
+                }, 1500);
             } else {
-                alert(data.message);
+                document.getElementById('saveError').textContent = data.message || 'Error al guardar';
+                document.getElementById('saveError').style.display = 'block';
             }
         })
         .catch(error => {
-            alert('Error al guardar: ' + error.message);
+            document.getElementById('saveSpinner').style.display = 'none';
+            document.getElementById('saveMessage').style.display = 'none';
+            document.getElementById('saveError').textContent = 'Error al guardar: ' + error.message;
+            document.getElementById('saveError').style.display = 'block';
         });
     });
 })();

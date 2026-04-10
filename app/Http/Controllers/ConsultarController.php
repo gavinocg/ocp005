@@ -93,13 +93,13 @@ class ConsultarController extends Controller
                     'codigo_servicio' => 'ZG',
                     'numero_cuenta' => '',
                     'valor' => floatval($item['VALOR'] ?? 0),
-                    'codigo_tercero' => $item['TRAMITE'] ?? '',
+                    'codigo_tercero' => $this->normalizeText($item['TRAMITE'] ?? ''),
                     'referencia' => 'REG_PROP_MERC_CAYAMB',
                     'forma_pago' => 'RE',
                     'moneda' => 'USD',
-                    'nombre_tercero' => $item['NOMBRE'] ?? '',
+                    'nombre_tercero' => $this->normalizeText($item['NOMBRE'] ?? ''),
                     'tipo_id_tercero' => $tipoId,
-                    'identificacion' => $item['IDENTIFICACION'] ?? '',
+                    'identificacion' => $this->normalizeText($item['IDENTIFICACION'] ?? ''),
                     'valor_iva_servicios' => 0.00,
                     'valor_iva_bienes' => 0.00,
                     'base_imponible_servicios' => 0.00,
@@ -111,7 +111,7 @@ class ConsultarController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Se guardaron {$saved} registros exitosamente",
-                'saved' => $saved
+                'count' => $saved
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -119,5 +119,21 @@ class ConsultarController extends Controller
                 'message' => 'Error al guardar: ' . $e->getMessage()
             ]);
         }
+    }
+
+    private function normalizeText(string $text): string
+    {
+        $map = [
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U', 'Ü' => 'U', 'Ñ' => 'N',
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+            'À' => 'A', 'È' => 'E', 'Ì' => 'I', 'Ò' => 'O', 'Ù' => 'U', 'à' => 'a', 'è' => 'e', 'ì' => 'i', 'ò' => 'o', 'ù' => 'u',
+            'Â' => 'A', 'Ê' => 'E', 'Î' => 'I', 'Ô' => 'O', 'Û' => 'U', 'â' => 'a', 'ê' => 'e', 'î' => 'i', 'ô' => 'o', 'û' => 'u',
+            'Ä' => 'A', 'Ë' => 'E', 'Ï' => 'I', 'Ö' => 'O', 'Ÿ' => 'Y', 'ä' => 'a', 'ë' => 'e', 'ï' => 'i', 'ö' => 'o', 'ÿ' => 'y',
+            'Ç' => 'C', 'ç' => 'c'
+        ];
+
+        $text = strtr($text, $map);
+        $text = preg_replace('/\s+/', ' ', $text);
+        return trim($text);
     }
 }

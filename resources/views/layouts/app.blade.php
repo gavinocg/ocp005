@@ -367,6 +367,110 @@
         .gap-3 {
             gap: 1rem;
         }
+
+        /* Pagination Styles */
+        .pagination-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1rem 0;
+        }
+
+        .pagination-info {
+            min-width: 200px;
+        }
+
+        .pagination-info .info-text {
+            font-size: 0.9rem;
+            color: #55627d;
+        }
+
+        .pagination-info strong {
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .pagination-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .pagination-list {
+            display: flex;
+            gap: 0.25rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pagination-item {
+            margin: 0;
+        }
+
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            padding: 0.375rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #4b5563;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .pagination-btn:hover:not(.active):not(:disabled) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #1f2937;
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border-color: #0b5ed7;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.35);
+        }
+
+        .pagination-btn:disabled,
+        .pagination-item.disabled .pagination-btn {
+            background: #ffffff;
+            color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.5;
+            border-color: #d1d5db;
+        }
+
+        .pagination-dots {
+            padding: 0.375rem 0.5rem;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        /* Responsive pagination */
+        @media (max-width: 576px) {
+            .pagination-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pagination-info {
+                text-align: center;
+            }
+
+            .pagination-nav {
+                justify-content: center;
+            }
+        }
     </style>
 
     @stack('styles')
@@ -387,6 +491,10 @@
             <a href="{{ route('cobros.index') }}" class="topbar-nav-link {{ request()->routeIs('cobros.*') ? 'active' : '' }}">
                 <i class="bi bi-list-ul"></i>
                 <span>Listado de Cobros</span>
+            </a>
+            <a href="{{ route('envios.index') }}" class="topbar-nav-link {{ request()->routeIs('envios.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Log de Envíos</span>
             </a>
         </nav>
     </div>

@@ -18,6 +18,8 @@ class CobroPacifico extends Model
         'valor',
         'codigo_tercero',
         'referencia',
+        'numero_lote',
+        'fecha_lote',
         'forma_pago',
         'moneda',
         'nombre_tercero',
@@ -28,6 +30,10 @@ class CobroPacifico extends Model
         'valor_iva_bienes',
         'base_imponible_servicios',
         'base_imponible_bienes',
+    ];
+
+    protected $casts = [
+        'fecha_lote' => 'datetime',
     ];
 
     public static function rules(): array

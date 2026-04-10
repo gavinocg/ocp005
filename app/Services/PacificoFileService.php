@@ -11,27 +11,48 @@ class PacificoFileService
     {
         $fields = [];
 
+        // Campo 1: Indicador de registro (1)
         $fields[] = $this->padRight('1', 1);
+        // Campo 2: Código de transacción (3)
         $fields[] = $this->padRight($cobro->transaccion ?? 'OCP', 3);
+        // Campo 3: Código de servicio (2)
         $fields[] = $this->padRight($cobro->codigo_servicio ?? 'ZG', 2);
+        // Campo 4: Número de cuenta (10)
         $fields[] = $this->padRight($this->padAccountNumber($cobro->numero_cuenta), 10);
+        // Campo 5: Valor (15)
         $fields[] = $this->padLeft(number_format($cobro->valor, 2, '', ''), 15, '0');
+        // Campo 6: Código de tercero (15)
         $fields[] = $this->padLeft($cobro->codigo_tercero ?? '', 15, ' ');
+        // Campo 7: Referencia (20)
         $fields[] = $this->padRight($cobro->referencia, 20);
+        // Campo 8: Forma de pago (2)
         $fields[] = $this->padRight($cobro->forma_pago ?? 'RE', 2);
+        // Campo 9: Moneda (3)
         $fields[] = $this->padRight($cobro->moneda ?? 'USD', 3);
+        // Campo 10: Nombre del tercero (30)
         $fields[] = $this->padRight($cobro->nombre_tercero ?? '', 30);
+        // Campo 11: Código de localidad (2)
         $fields[] = $this->padRight('', 2);
+        // Campo 12: Reserved (2)
         $fields[] = $this->padRight('', 2);
+        // Campo 13: Tipo de identificación (1)
         $fields[] = $this->padRight($cobro->tipo_id_tercero, 1);
+        // Campo 14: Identificación (14)
         $fields[] = $this->padLeft($cobro->identificacion ?? '', 14, ' ');
+        // Campo 15: Reserved (83)
         $fields[] = $this->padRight('', 83);
+        // Campo 16: Valor IVA servicios (9)
         $fields[] = $this->padLeft(number_format($cobro->valor_iva_servicios ?? 0, 2, '', ''), 9, '0');
+        // Campo 17: Tipo de prestación (1)
         $fields[] = $this->padRight($cobro->tipo_prestacion ?? 'A', 1);
+        // Campo 18: Valor IVA bienes (9)
         $fields[] = $this->padLeft(number_format($cobro->valor_iva_bienes ?? 0, 2, '', ''), 9, '0');
+        // Campo 19: Base imponible servicios (10)
         $fields[] = $this->padLeft(number_format($cobro->base_imponible_servicios ?? 0, 2, '', ''), 10, '0');
+        // Campo 20: Base imponible bienes (10)
         $fields[] = $this->padLeft(number_format($cobro->base_imponible_bienes ?? 0, 2, '', ''), 10, '0');
 
+        // Suma total: 1+3+2+10+15+15+20+2+3+30+2+2+1+14+83+9+1+9+10+10 = 242
         $line = implode('', $fields);
 
         return $this->normalizeLine($line);

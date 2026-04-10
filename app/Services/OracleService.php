@@ -97,7 +97,13 @@ class OracleService
                 (SUM(ta.valor)-SUM(ta.valor_dscto) + NVL((SELECT SUM(tr.valor*tr.cant) FROM tramite_rubro tr WHERE tr.cod_tram=t.cod_tram), 0)) valor,
                 p.tip_identificacion, 
                 p.identificacion,
-                SUBSTR(TRIM(p.pri_apellido||' '||p.seg_apellido||' '||p.pri_nombre||' '||p.seg_nombre), 1, 30) AS nombre
+                SUBSTR(
+                    TRIM(
+                        NVL(p.pri_apellido, '') || ' ' || NVL(p.seg_apellido, '') || ' ' || 
+                        NVL(p.pri_nombre, '') || ' ' || NVL(p.seg_nombre, '')
+                    ), 
+                    1, 30
+                ) AS nombre
             FROM tramite t 
             INNER JOIN tramite_acto ta ON t.cod_tram=ta.cod_tram    
             INNER JOIN persona p ON t.cod_persol=p.cod_per 
@@ -115,7 +121,13 @@ class OracleService
             AND t.estado NOT IN ('INACTIVO', 'ANULADO')
             AND tc.estado IS NULL    
             GROUP BY t.cod_tramsec, t.cod_tram, tip_identificacion, p.identificacion, p.pri_nombre, p.pri_apellido, p.celular, 
-                p.telefono, p.email, SUBSTR(TRIM(p.pri_apellido||' '||p.seg_apellido||' '||p.pri_nombre||' '||p.seg_nombre), 1, 30), 
+                p.telefono, p.email, SUBSTR(
+                    TRIM(
+                        NVL(p.pri_apellido, '') || ' ' || NVL(p.seg_apellido, '') || ' ' || 
+                        NVL(p.pri_nombre, '') || ' ' || NVL(p.seg_nombre, '')
+                    ), 
+                    1, 30
+                ), 
                 NVL(TRIM(p.telefono),'NO'), NVL(TRIM(p.celular),'NO'), 
                 NVL(TRIM(p.email),'NO'), t.fecha_reg, tc.estado
             ORDER BY valor DESC

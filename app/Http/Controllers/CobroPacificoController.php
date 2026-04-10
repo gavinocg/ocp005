@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CobroPacifico;
+use App\Models\EnvioLog;
 use App\Services\PacificoFileService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,34 +20,54 @@ class CobroPacificoController extends Controller
     {
         $query = CobroPacifico::query();
 
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('identificacion', 'like', '%' . $search . '%')
-                  ->orWhere('codigo_tercero', 'like', '%' . $search . '%')
-                  ->orWhere('referencia', 'like', '%' . $search . '%')
-                  ->orWhere('nombre_tercero', 'like', '%' . $search . '%');
-            });
+        if ($request->has('codigo_tercero') && $request->codigo_tercero) {
+            $query->where('codigo_tercero', 'like', '%' . $request->codigo_tercero . '%');
+        }
+
+        if ($request->has('identificacion') && $request->identificacion) {
+            $query->where('identificacion', 'like', '%' . $request->identificacion . '%');
+        }
+
+        if ($request->has('nombre') && $request->nombre) {
+            $query->where('nombre_tercero', 'like', '%' . $request->nombre . '%');
         }
 
         if ($request->has('tipo_id') && $request->tipo_id) {
             $query->where('tipo_id_tercero', $request->tipo_id);
         }
 
-        if ($request->has('fecha_inicio') && $request->fecha_inicio) {
-            $query->whereDate('created_at', '>=', $request->fecha_inicio);
+        if ($request->has('valor_min') && $request->valor_min) {
+            $query->where('valor', '>=', floatval($request->valor_min));
         }
 
-        if ($request->has('fecha_fin') && $request->fecha_fin) {
-            $query->whereDate('created_at', '<=', $request->fecha_fin);
+        if ($request->has('valor_max') && $request->valor_max) {
+            $query->where('valor', '<=', floatval($request->valor_max));
         }
 
-        $cobros = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        if ($request->has('fecha_creacion_inicio') && $request->fecha_creacion_inicio) {
+            $query->whereDate('created_at', '>=', $request->fecha_creacion_inicio);
+        }
 
-        $totalRegistros = $query->count();
-        $valorTotal = $query->sum('valor');
+        if ($request->has('fecha_creacion_fin') && $request->fecha_creacion_fin) {
+            $query->whereDate('created_at', '<=', $request->fecha_creacion_fin);
+        }
 
-        return view('cobros.index', compact('cobros', 'totalRegistros', 'valorTotal'));
+        if ($request->has('numero_lote') && $request->numero_lote) {
+            $query->where('numero_lote', 'like', '%' . $request->numero_lote . '%');
+        }
+
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
+        $allowedSorts = ['codigo_tercero', 'tipo_id_tercero', 'identificacion', 'nombre_tercero', 'valor', 'numero_lote', 'fecha_lote', 'created_at'];
+        
+        if (!in_array($sortField, $allowedSorts)) {
+            $sortField = 'created_at';
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $cobros = $query->orderBy($sortField, $sortDirection)->paginate($perPage)->withQueryString();
+
+        return view('cobros.index', compact('cobros'));
     }
 
     public function create(): View
@@ -121,11 +143,73 @@ class CobroPacificoController extends Controller
             ->with('success', 'Cobro actualizado exitosamente.');
     }
 
-    public function export(): StreamedResponse
+    public function export(Request $request)
     {
-        $cobros = CobroPacifico::all();
-        $filename = 'cobros_pacifico_' . date('Ymd_His') . '.txt';
+        try {
+            $tipo = $request->input('tipo', 'pendientes');
+            $idsInput = $request->input('ids', '');
+            
+            $ids = [];
+            if ($idsInput) {
+                $ids = is_array($idsInput) ? $idsInput : explode(',', $idsInput);
+            }
 
+            if ($tipo === 'seleccionados' && !empty($ids)) {
+                $cobros = CobroPacifico::whereIn('id', $ids)->get();
+            } else {
+                $cobros = CobroPacifico::whereNull('numero_lote')->get();
+            }
+
+            if ($cobros->isEmpty()) {
+                if ($request->ajax() || $request->header('Accept') === 'application/json') {
+                    return response()->json(['error' => 'No hay registros para exportar'], 422);
+                }
+                return back()->with('error', 'No hay registros para exportar');
+            }
+
+            $valorTotal = $cobros->sum('valor');
+            $totalRegistros = $cobros->count();
+            $numeroLote = 'LOTE-' . date('YmdHis');
+            $timestamp = now();
+            $filename = 'cobros_pacifico_' . $numeroLote . '.txt';
+
+            EnvioLog::create([
+                'numero_lote' => $numeroLote,
+                'timestamp_generacion' => $timestamp,
+                'valor_total' => $valorTotal,
+                'total_registros' => $totalRegistros,
+                'filename' => $filename,
+                'tipo_envio' => $tipo,
+                'registros_ids' => $cobros->pluck('id')->implode(','),
+            ]);
+
+            CobroPacifico::whereIn('id', $cobros->pluck('id'))->update([
+                'numero_lote' => $numeroLote,
+                'fecha_lote' => $timestamp,
+            ]);
+
+            return $this->fileService->generateAndDownload($cobros, $filename);
+        } catch (\Exception $e) {
+            \Log::error('Error en export: ' . $e->getMessage());
+            return back()->with('error', 'Error al exportar: ' . $e->getMessage());
+        }
+    }
+
+    public function regenerateExport($cobros, string $filename)
+    {
         return $this->fileService->generateAndDownload($cobros, $filename);
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'No hay registros seleccionados']);
+        }
+
+        CobroPacifico::whereIn('id', $ids)->delete();
+
+        return response()->json(['success' => true, 'message' => 'Registros eliminados correctamente']);
     }
 }
