@@ -18,10 +18,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('cobros.index') }}"><i class="bi bi-list"></i> Listar Cobros</a>
+                        <a class="nav-link" href="{{ route('consultar.index') }}"><i class="bi bi-database-fill-down"></i> Consultar</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('cobros.create') }}"><i class="bi bi-plus-circle"></i> Nuevo Cobro</a>
+                        <a class="nav-link" href="{{ route('cobros.index') }}"><i class="bi bi-list"></i> Listar Cobros</a>
                     </li>
                 </ul>
             </div>
